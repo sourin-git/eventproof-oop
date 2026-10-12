@@ -5,6 +5,8 @@ programs, and sports meets. The JavaFX desktop application stores events and
 incidents in MySQL, calculates a simple reliability score, and runs what-if scenarios.
 It is a rule-based classroom estimate, **not a real-world safety prediction**.
 
+For the presentation procedure and viva preparation, see [Demo guide](docs/DEMO_GUIDE.md).
+
 ## Stack and installation
 
 Java 25, JavaFX 25.0.1, Maven, MySQL 8, JDBC (Connector/J 9.5.0), and JUnit 6.0.3.
@@ -87,9 +89,13 @@ They use DriverManager, PreparedStatement, ResultSet and try-with-resources.
 | Abstraction | Abstract Event declares calculateReliabilityPenalty() |
 | Inheritance | TechnicalEvent, CulturalEvent and SportsEvent extend Event |
 | Polymorphism | ReliabilityCalculator calls the overridden method through an Event reference |
-| Composition / has-a | Event contains a Venue object; venues can be shared by events |
+| Object composition / has-a | Event contains a Venue object; venues can be shared by events |
 | Collections | DAOs return List<Event>, List<Venue> and List<Incident> |
 | Exception handling | Invalid forms are rejected; SQL failures produce safe error dialogs |
+
+In strict UML, Event-Venue is aggregation because venues exist independently and
+can be shared. The has-a relationship illustrates object composition in the broader
+programming sense; it does not enforce exclusive ownership or a shared lifecycle.
 
 `PolymorphismDemo` calls the same method on an Event array holding all three
 subclasses. Its penalties are 35, 20, and 25 for the same unprepared, over-capacity venue.
