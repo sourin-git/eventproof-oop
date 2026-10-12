@@ -1,0 +1,15 @@
+.root {
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-font-size: 13px;
+    -fx-background-color: #f4f5f7;
+    -fx-text-base-color: #263242;
+    -fx-accent: #365c83;
+}
+.header { -fx-background-color: #e5e9ee; }
+.app-title { -fx-font-size: 27px; -fx-font-weight: bold; }
+.button { -fx-padding: 8 16; -fx-cursor: hand; }
+.text-field, .text-area, .combo-box, .date-picker { -fx-background-radius: 4; }
+.table-view { -fx-background-color: white; -fx-border-color: #d3d9e0; }
+.score-card { -fx-padding: 24; -fx-background-color: white; -fx-border-color: #d3d9e0; -fx-background-radius: 4; }
+.score { -fx-font-size: 22px; -fx-font-weight: bold; }
+.tab-pane > .tab-header-area > .tab-header-background { -fx-background-color: #e5e9ee; }
