@@ -54,6 +54,12 @@ Always run from the project root so the application can find the local configura
 Close the window to exit. Input errors and database failures are shown in dialogs;
 database error dialogs do not print credentials. Connection and query I/O have timeouts.
 
+On Windows, double-click `launch-eventproof.cmd` to launch or reopen the application.
+It changes to the project directory and runs the same Maven command with the local
+cache. Java and Maven must be installed and MySQL running with the local configuration
+already prepared. Maven output stays visible; if launching fails, the window pauses
+so you can read the error.
+
 On this development machine, JDK 25.0.1, Maven 3.9.16 and MySQL 8.0.46 are installed.
 Service `MySQL80` is running. The command-line client is installed at
 `C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe` but is not on PATH.

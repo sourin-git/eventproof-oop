@@ -17,23 +17,27 @@ mvn "-Dmaven.repo.local=.maven-repository" clean test
 mvn "-Dmaven.repo.local=.maven-repository" javafx:run
 ```
 
-The local-cache option can be omitted when using the normal Maven cache.
-Have the launch command ready to run again after closing the window.
+On Windows, double-click `launch-eventproof.cmd` to launch and reopen without typing
+commands during the demonstration. Java and Maven must already be installed.
+Choose a folder for the report and have a text editor ready. Complete tests beforehand.
 
 ## Three-minute procedure
 
 | Time | Action and explanation |
 | --- | --- |
-| 0:00-0:20 | Introduce EventProof. EVENTS displays saved MySQL records; point out College Tech Fest 2026, its venue and attendance. |
-| 0:20-1:00 | Use New venue: name `Viva Hall`, capacity `500`, enable both backups, then OK. The new venue is selected. Create `Viva Technical Event`, type TECHNICAL, a calendar date and attendance `400`. Save event and Refresh. |
-| 1:00-1:45 | On RELIABILITY, select the new event and Calculate reliability: 100, LOW with no incidents. Run INTERNET_FAILURE (65, MEDIUM), POWER_FAILURE (70, MEDIUM), and OVERCROWDING (70, MEDIUM). Explain that each scenario adds one hypothetical incident and changes only a copy. |
-| 1:45-2:10 | On INCIDENTS, select the new event. Add type `Internet Failure` and description `Internet interrupted during the viva demo`. Save incident. Its actual history now reduces the baseline to 90. |
-| 2:10-2:35 | Close and relaunch with the ready command. Show the new event, venue and saved incident. Calculate again: 90, LOW. |
-| 2:35-3:00 | Explain Event's abstract method, the three overriding subclasses, and the foreign keys. Technical events give internet extra weight; cultural events emphasize power; sports events emphasize crowd capacity. |
+| 0:00-0:25 | Launch EventProof. EVENTS displays saved MySQL records. Point out College Tech Fest 2026, its venue, capacity and attendance. |
+| 0:25-0:55 | On RELIABILITY, select College Tech Fest 2026 and Calculate reliability. Select INTERNET_FAILURE and Simulate failure. Compare original/simulated scores and risk levels. Simulation changes only copies. |
+| 0:55-1:20 | On INCIDENTS, select the same event. Save type `Internet Failure` with a distinct description such as `Final viva demo - date and time`. Show the saved row. This records a real incident and affects later calculations. |
+| 1:20-1:50 | Close the application and reopen with the launcher. On INCIDENTS, select the same event and find your saved description to demonstrate MySQL persistence. |
+| 1:50-2:20 | Return to RELIABILITY and select the event. **Calculate again because incident history changed**, then select INTERNET_FAILURE and Simulate failure again. Explain the updated comparison. |
+| 2:20-2:45 | Click Export Report. In the Save dialog, choose a folder and save the `.txt` file. Open it in a text editor and compare event details, actual scores, scenario, risk and generation time with the screen. |
+| 2:45-3:00 | Point to the packages, ReliabilityAssessable interface, abstract Event and its overriding subclasses. Explain runtime dispatch in ReliabilityCalculator and validation/checked exceptions. |
 
-Use a distinct name on repeat demonstrations. Scores above assume exactly these
-inputs and no previous incidents for the newly created event. Scores are calculated,
-not stored or hardcoded in the GUI. Repeated incident additions change the results.
+Scores depend on the current event and recorded incident history; read the actual
+results on screen instead of memorizing a score. They are rule-based classroom
+estimates. Each saved incident remains in history. Export uses the last successful
+calculation, so always recalculate after recording an incident. Changing a scenario
+clears the previous simulation; changing the event invalidates all previous results.
 
 ## OOP concepts in the code
 
@@ -42,10 +46,11 @@ not stored or hardcoded in the GUI. Repeated incident additions change the resul
 | Encapsulation | Event's private fields and validating setters; Venue and Incident constructor values exposed through getters |
 | Abstraction | Abstract Event declares calculateReliabilityPenalty() |
 | Inheritance | TechnicalEvent, CulturalEvent and SportsEvent extend Event |
+| Packages and interface | model holds ReliabilityAssessable and Event; reliability imports the contract; ui imports DAOs and report classes |
 | Runtime polymorphism | ReliabilityCalculator calls calculateReliabilityPenalty() through a ReliabilityAssessable reference holding an Event; the subclass method runs |
 | Object composition / has-a | Event contains a Venue reference; the calculator builds separate Event/Venue objects for a simulation |
 | Collections | EventDAO returns List<Event>; IncidentDAO returns List<Incident>; JavaFX tables display these records |
-| Exception handling | Form validation catches invalid input; DAOs propagate SQLException; views display safe error dialogs; resources close with try-with-resources |
+| Exception handling | Event throws InvalidEventDataException; DAOs propagate SQLException; export propagates IOException; views catch errors; ExceptionHandlingDemo shows finally; JDBC uses try-with-resources |
 
 **Terminology:** because a venue is shared and exists independently of an event,
 Event-Venue is **aggregation in strict UML**, rather than exclusive lifecycle

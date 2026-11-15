@@ -34,8 +34,14 @@ public class EventProofApp extends Application {
         eventsView = new EventsView(this::refresh);
         incidentsView = new IncidentsView();
         reliabilityView = new ReliabilityView();
+        ScrollPane reliabilityScroll = new ScrollPane(reliabilityView);
+        reliabilityScroll.setId("reliability-scroll");
+        reliabilityScroll.setFitToWidth(true);
+        reliabilityScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        reliabilityScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        reliabilityScroll.setStyle("-fx-background-color: transparent; -fx-background-insets: 0;");
         TabPane tabs = new TabPane(new Tab("EVENTS", eventsView), new Tab("INCIDENTS", incidentsView),
-                new Tab("RELIABILITY", reliabilityView));
+                new Tab("RELIABILITY", reliabilityScroll));
         tabs.setId("main-tabs");
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         status.setPadding(new Insets(10, 24, 10, 24));

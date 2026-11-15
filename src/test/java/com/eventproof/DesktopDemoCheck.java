@@ -94,12 +94,23 @@ public class DesktopDemoCheck {
         SimulationResult comparison = calculator.simulate(technical, recorded, FailureScenario.INTERNET_FAILURE);
         require(controlLabel(scene, "simulated-score").equals("Simulated Score: " + comparison.getSimulatedScore() + " / 100"),
                 "Simulation display mismatch");
-        require(controlLabel(scene, "risk-level").contains(comparison.getRiskLevel().name()), "Risk mismatch");
+        String originalRisk = "Risk Level: " + calculator.riskLevel(original);
+        require(controlLabel(scene, "risk-level").equals(originalRisk), "Original risk lost during simulation");
+        require(controlLabel(scene, "simulated-risk-level").contains(comparison.getRiskLevel().name()), "Simulated risk mismatch");
         require(!controlLabel(scene, "recommendation").isBlank(), "Recommendation missing");
         require(new IncidentDAO().listByEventId(1).size() == recorded.size(), "Simulation wrote an incident");
         require(new EventDAO().findById(1).orElseThrow().getVenue().hasBackupInternet(), "Simulation changed stored venue");
         System.out.println("Desktop comparison: original=" + original + ", simulated=" + comparison.getSimulatedScore()
                 + ", risk=" + comparison.getRiskLevel());
+
+        scenario.setValue(FailureScenario.POWER_FAILURE);
+        require(controlLabel(scene, "risk-level").equals(originalRisk), "Scenario change cleared original risk");
+        require(controlLabel(scene, "simulated-score").equals("Simulated Score: —"), "Stale simulated score remained");
+        require(controlLabel(scene, "simulated-risk-level").equals("Simulated Risk Level: —"), "Stale simulated risk remained");
+        require(!control(scene, "export-report").isDisabled(), "Original report should remain available");
+        selection.setValue(null);
+        require(control(scene, "export-report").isDisabled(), "Event change should disable export");
+        require(controlLabel(scene, "risk-level").equals("Risk Level: —"), "Stale event risk remained");
 
         tabs.getSelectionModel().select(1);
         scene.getRoot().applyCss();

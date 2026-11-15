@@ -29,6 +29,7 @@ public class ReliabilityView extends VBox {
     private final Label original = new Label("Original Score: —");
     private final Label simulated = new Label("Simulated Score: —");
     private final Label risk = new Label("Risk Level: —");
+    private final Label simulatedRisk = new Label("Simulated Risk Level: —");
     private final Label recommendation = new Label("Select an event and calculate reliability.");
     private final ReliabilityCalculator calculator = new ReliabilityCalculator();
     private final Button export = new Button("Export Report");
@@ -47,6 +48,7 @@ public class ReliabilityView extends VBox {
         original.setId("original-score");
         simulated.setId("simulated-score");
         risk.setId("risk-level");
+        simulatedRisk.setId("simulated-risk-level");
         recommendation.setId("recommendation");
         event.setPrefWidth(380);
         scenario.getSelectionModel().select(FailureScenario.NORMAL);
@@ -55,7 +57,7 @@ public class ReliabilityView extends VBox {
             reportScenario = null;
             reportSimulation = null;
             simulated.setText("Simulated Score: —");
-            risk.setText("Risk Level: —");
+            simulatedRisk.setText("Simulated Risk Level: —");
             recommendation.setText("Run the selected scenario to refresh the comparison.");
         });
         Button calculate = new Button("Calculate reliability");
@@ -67,7 +69,7 @@ public class ReliabilityView extends VBox {
         Button simulate = new Button("Simulate failure");
         simulate.setId("simulate-failure");
         simulate.setOnAction(action -> calculate(true));
-        VBox scores = new VBox(16, original, simulated, risk, recommendation);
+        VBox scores = new VBox(16, original, simulated, risk, simulatedRisk, recommendation);
         scores.getStyleClass().add("score-card");
         original.getStyleClass().add("score");
         simulated.getStyleClass().add("score");
@@ -100,6 +102,7 @@ public class ReliabilityView extends VBox {
         original.setText("Original Score: —");
         simulated.setText("Simulated Score: —");
         risk.setText("Risk Level: —");
+        simulatedRisk.setText("Simulated Risk Level: —");
         recommendation.setText("Select an event and calculate reliability.");
     }
 
@@ -114,14 +117,15 @@ public class ReliabilityView extends VBox {
             int score = calculator.calculate(selected, incidents);
             SimulationResult result = null;
             original.setText("Original Score: " + score + " / 100");
+            risk.setText("Risk Level: " + calculator.riskLevel(score));
             if (simulate) {
                 result = calculator.simulate(selected, incidents, scenario.getValue());
                 simulated.setText("Simulated Score: " + result.getSimulatedScore() + " / 100");
-                risk.setText("Risk Level: " + result.getRiskLevel() + " (simulated)");
+                simulatedRisk.setText("Simulated Risk Level: " + result.getRiskLevel());
                 recommendation.setText(result.getRecommendation());
             } else {
                 simulated.setText("Simulated Score: —");
-                risk.setText("Risk Level: " + calculator.riskLevel(score));
+                simulatedRisk.setText("Simulated Risk Level: —");
                 recommendation.setText("Recorded incidents: " + incidents.size()
                         + ". Review incidents, check backups, and keep attendance within capacity.");
             }
