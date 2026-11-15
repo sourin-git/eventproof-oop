@@ -1,5 +1,11 @@
 package com.eventproof;
 
+import com.eventproof.model.CulturalEvent;
+import com.eventproof.model.Event;
+import com.eventproof.model.SportsEvent;
+import com.eventproof.model.TechnicalEvent;
+import com.eventproof.model.Venue;
+
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;

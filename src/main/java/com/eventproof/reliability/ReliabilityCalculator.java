@@ -1,4 +1,12 @@
-package com.eventproof;
+package com.eventproof.reliability;
+
+import com.eventproof.model.CulturalEvent;
+import com.eventproof.model.Event;
+import com.eventproof.model.Incident;
+import com.eventproof.model.ReliabilityAssessable;
+import com.eventproof.model.SportsEvent;
+import com.eventproof.model.TechnicalEvent;
+import com.eventproof.model.Venue;
 
 import java.util.List;
 import java.util.Objects;
@@ -16,7 +24,8 @@ public class ReliabilityCalculator {
     public int calculate(Event event, int incidentCount) {
         Objects.requireNonNull(event, "event");
         if (incidentCount < 0) { throw new IllegalArgumentException("Incident count cannot be negative"); }
-        int penalty = event.calculateReliabilityPenalty(); // Runtime polymorphism.
+        ReliabilityAssessable assessment = event;
+        int penalty = assessment.calculateReliabilityPenalty(); // Interface-based runtime polymorphism.
         if (event.getExpectedAttendance() > event.getVenue().getCapacity()) { penalty += 20; }
         if (!event.getVenue().hasBackupPower()) { penalty += 5; }
         if (!event.getVenue().hasBackupInternet()) { penalty += 5; }

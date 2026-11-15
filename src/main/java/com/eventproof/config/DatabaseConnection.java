@@ -1,4 +1,4 @@
-package com.eventproof;
+package com.eventproof.config;
 
 import java.io.IOException;
 import java.sql.Connection;

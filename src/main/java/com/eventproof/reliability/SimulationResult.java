@@ -1,4 +1,4 @@
-package com.eventproof;
+package com.eventproof.reliability;
 
 public class SimulationResult {
     private final int originalScore;

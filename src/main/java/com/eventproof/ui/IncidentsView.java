@@ -1,4 +1,8 @@
-package com.eventproof;
+package com.eventproof.ui;
+
+import com.eventproof.dao.IncidentDAO;
+import com.eventproof.model.Event;
+import com.eventproof.model.Incident;
 
 import java.sql.SQLException;
 import java.util.List;

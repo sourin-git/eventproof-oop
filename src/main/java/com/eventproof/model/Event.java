@@ -1,9 +1,9 @@
-package com.eventproof;
+package com.eventproof.model;
 
 import java.time.LocalDate;
 import java.util.Objects;
 
-public abstract class Event {
+public abstract class Event implements ReliabilityAssessable {
     private int id;
     private String name;
     private LocalDate eventDate;
@@ -20,6 +20,7 @@ public abstract class Event {
     }
 
     /** Returns event-specific penalty points used by ReliabilityCalculator. */
+    @Override
     public abstract int calculateReliabilityPenalty();
 
     public String getEventType() {

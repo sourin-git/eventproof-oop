@@ -1,4 +1,13 @@
-package com.eventproof;
+package com.eventproof.ui;
+
+import com.eventproof.dao.EventDAO;
+import com.eventproof.dao.IncidentDAO;
+import com.eventproof.model.Event;
+import com.eventproof.model.Incident;
+import com.eventproof.reliability.FailureScenario;
+import com.eventproof.reliability.ReliabilityCalculator;
+import com.eventproof.reliability.RiskLevel;
+import com.eventproof.reliability.SimulationResult;
 
 import java.sql.SQLException;
 import java.util.List;

@@ -1,5 +1,13 @@
 package com.eventproof;
 
+import com.eventproof.config.DatabaseConnection;
+import com.eventproof.dao.EventDAO;
+import com.eventproof.dao.IncidentDAO;
+import com.eventproof.dao.VenueDAO;
+import com.eventproof.model.CulturalEvent;
+import com.eventproof.model.SportsEvent;
+import com.eventproof.model.TechnicalEvent;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;

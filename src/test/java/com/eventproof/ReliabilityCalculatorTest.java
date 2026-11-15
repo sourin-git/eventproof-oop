@@ -1,5 +1,16 @@
 package com.eventproof;
 
+import com.eventproof.model.CulturalEvent;
+import com.eventproof.model.Event;
+import com.eventproof.model.Incident;
+import com.eventproof.model.SportsEvent;
+import com.eventproof.model.TechnicalEvent;
+import com.eventproof.model.Venue;
+import com.eventproof.reliability.FailureScenario;
+import com.eventproof.reliability.ReliabilityCalculator;
+import com.eventproof.reliability.RiskLevel;
+import com.eventproof.reliability.SimulationResult;
+
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;

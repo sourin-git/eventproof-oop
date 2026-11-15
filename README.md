@@ -6,6 +6,7 @@ incidents in MySQL, calculates a simple reliability score, and runs what-if scen
 It is a rule-based classroom estimate, **not a real-world safety prediction**.
 
 For the presentation procedure and viva preparation, see [Demo guide](docs/DEMO_GUIDE.md).
+For Review 2 Step 1 packages and the interface, see [Review 2](docs/REVIEW2.md).
 
 ## Stack and installation
 
@@ -68,13 +69,16 @@ Exactly three tables, each with an auto-increment primary key:
 Stored types `TECHNICAL`, `CULTURAL`, and `SPORTS` are reconstructed by `EventDAO`
 as `TechnicalEvent`, `CulturalEvent`, and `SportsEvent` respectively.
 
-All Java classes use `com.eventproof`:
+Java classes are organized into these packages:
 
-- **Domain:** Event, TechnicalEvent, CulturalEvent, SportsEvent, Venue, Incident.
-- **JDBC:** DatabaseConfig, DatabaseConnection, DatabaseSetup, VenueDAO, EventDAO, IncidentDAO.
-- **Rules:** ReliabilityCalculator, FailureScenario, RiskLevel, SimulationResult.
-- **Desktop:** EventProofApp, EventsView, IncidentsView, ReliabilityView, UiMessages.
-- **Console example:** PolymorphismDemo.
+| Package | Classes and interface |
+| --- | --- |
+| com.eventproof | EventProofApp, DatabaseSetup, PolymorphismDemo entry points |
+| com.eventproof.model | Event, TechnicalEvent, CulturalEvent, SportsEvent, Venue, Incident, ReliabilityAssessable interface |
+| com.eventproof.dao | VenueDAO, EventDAO, IncidentDAO |
+| com.eventproof.config | DatabaseConfig, DatabaseConnection |
+| com.eventproof.reliability | ReliabilityCalculator, FailureScenario, RiskLevel, SimulationResult |
+| com.eventproof.ui | EventsView, IncidentsView, ReliabilityView, UiMessages |
 
 Sources are in `src/main/java`; SQL and CSS are in `src/main/resources`;
 tests are in `src/test/java`. DAO operations are intentionally limited:
@@ -87,8 +91,9 @@ They use DriverManager, PreparedStatement, ResultSet and try-with-resources.
 | --- | --- |
 | Encapsulation | Private domain fields; Event setters validate changes; Venue/Incident constructor values have getters |
 | Abstraction | Abstract Event declares calculateReliabilityPenalty() |
+| Interface | Event implements ReliabilityAssessable, which declares the existing penalty method |
 | Inheritance | TechnicalEvent, CulturalEvent and SportsEvent extend Event |
-| Polymorphism | ReliabilityCalculator calls the overridden method through an Event reference |
+| Polymorphism | ReliabilityCalculator calls the overridden penalty through a ReliabilityAssessable reference |
 | Object composition / has-a | Event contains a Venue object; venues can be shared by events |
 | Collections | DAOs return List<Event>, List<Venue> and List<Incident> |
 | Exception handling | Invalid forms are rejected; SQL failures produce safe error dialogs |
@@ -97,7 +102,7 @@ In strict UML, Event-Venue is aggregation because venues exist independently and
 can be shared. The has-a relationship illustrates object composition in the broader
 programming sense; it does not enforce exclusive ownership or a shared lifecycle.
 
-`PolymorphismDemo` calls the same method on an Event array holding all three
+`PolymorphismDemo` calls the same method on an interface array holding all three
 subclasses. Its penalties are 35, 20, and 25 for the same unprepared, over-capacity venue.
 
 ## Reliability and simulation rules
@@ -154,7 +159,7 @@ The result contains original score, simulated score, simulated risk, and a short
 These example scores assume the initial sample history plus exactly one added
 incident. Subsequent incident additions change the score through the implemented rules.
 
-## Verified results
+## Review 1 verified results
 
 - Real MySQL setup: 2 venues, 3 events, 3 initial incidents; SELECT queries succeeded.
 - After the desktop persistence demo: 2 venues, 3 events, 4 incidents.

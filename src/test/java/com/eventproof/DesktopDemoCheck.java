@@ -1,5 +1,17 @@
 package com.eventproof;
 
+import com.eventproof.config.DatabaseConnection;
+import com.eventproof.dao.EventDAO;
+import com.eventproof.dao.IncidentDAO;
+import com.eventproof.dao.VenueDAO;
+import com.eventproof.model.Event;
+import com.eventproof.model.Incident;
+import com.eventproof.model.TechnicalEvent;
+import com.eventproof.model.Venue;
+import com.eventproof.reliability.FailureScenario;
+import com.eventproof.reliability.ReliabilityCalculator;
+import com.eventproof.reliability.SimulationResult;
+
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

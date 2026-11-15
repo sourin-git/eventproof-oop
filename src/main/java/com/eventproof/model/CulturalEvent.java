@@ -1,4 +1,4 @@
-package com.eventproof;
+package com.eventproof.model;
 
 import java.time.LocalDate;
 

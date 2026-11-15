@@ -42,7 +42,7 @@ not stored or hardcoded in the GUI. Repeated incident additions change the resul
 | Encapsulation | Event's private fields and validating setters; Venue and Incident constructor values exposed through getters |
 | Abstraction | Abstract Event declares calculateReliabilityPenalty() |
 | Inheritance | TechnicalEvent, CulturalEvent and SportsEvent extend Event |
-| Runtime polymorphism | ReliabilityCalculator calls event.calculateReliabilityPenalty() through an Event reference; the subclass method runs |
+| Runtime polymorphism | ReliabilityCalculator calls calculateReliabilityPenalty() through a ReliabilityAssessable reference holding an Event; the subclass method runs |
 | Object composition / has-a | Event contains a Venue reference; the calculator builds separate Event/Venue objects for a simulation |
 | Collections | EventDAO returns List<Event>; IncidentDAO returns List<Incident>; JavaFX tables display these records |
 | Exception handling | Form validation catches invalid input; DAOs propagate SQLException; views display safe error dialogs; resources close with try-with-resources |
@@ -68,7 +68,7 @@ EventDAO reads event_type to reconstruct the correct Java subclass.
 1. **Why is Event abstract?** It shares event fields and validation but requires
    each concrete event type to supply its own reliability penalty.
 2. **Where does runtime polymorphism occur?** The calculator calls the same
-   penalty method on an Event reference. Java chooses TechnicalEvent,
+   penalty method on a ReliabilityAssessable reference. Java chooses TechnicalEvent,
    CulturalEvent or SportsEvent's override at runtime.
 3. **How does JDBC safely save and reload records?** DAOs bind form values with
    PreparedStatement, read ResultSet rows, and use generated IDs. Foreign keys

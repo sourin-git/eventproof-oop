@@ -1,4 +1,4 @@
-package com.eventproof;
+package com.eventproof.ui;
 
 import java.sql.SQLException;
 import javafx.beans.property.ReadOnlyStringWrapper;

@@ -1,5 +1,9 @@
 package com.eventproof;
 
+import com.eventproof.config.DatabaseConnection;
+import com.eventproof.dao.EventDAO;
+import com.eventproof.model.Event;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;

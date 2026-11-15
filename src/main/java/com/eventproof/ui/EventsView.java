@@ -1,4 +1,12 @@
-package com.eventproof;
+package com.eventproof.ui;
+
+import com.eventproof.dao.EventDAO;
+import com.eventproof.dao.VenueDAO;
+import com.eventproof.model.CulturalEvent;
+import com.eventproof.model.Event;
+import com.eventproof.model.SportsEvent;
+import com.eventproof.model.TechnicalEvent;
+import com.eventproof.model.Venue;
 
 import java.sql.SQLException;
 import java.time.LocalDate;

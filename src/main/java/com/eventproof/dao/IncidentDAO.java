@@ -1,4 +1,7 @@
-package com.eventproof;
+package com.eventproof.dao;
+
+import com.eventproof.config.DatabaseConnection;
+import com.eventproof.model.Incident;
 
 import java.sql.*;
 import java.util.ArrayList;

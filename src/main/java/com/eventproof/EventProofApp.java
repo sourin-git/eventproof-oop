@@ -1,5 +1,14 @@
 package com.eventproof;
 
+import com.eventproof.dao.EventDAO;
+import com.eventproof.dao.VenueDAO;
+import com.eventproof.model.Event;
+import com.eventproof.model.Venue;
+import com.eventproof.ui.EventsView;
+import com.eventproof.ui.IncidentsView;
+import com.eventproof.ui.ReliabilityView;
+import com.eventproof.ui.UiMessages;
+
 import javafx.application.Application;
 import java.sql.SQLException;
 import java.util.List;
