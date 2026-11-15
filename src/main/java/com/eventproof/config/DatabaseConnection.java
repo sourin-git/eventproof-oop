@@ -21,7 +21,7 @@ public class DatabaseConnection {
             return DriverManager.getConnection(serverOnly ? config.getServerUrl() : config.getUrl(), properties);
         } catch (IOException exception) {
             // Do not include configuration contents or credentials in error messages.
-            throw new SQLException("Cannot load local database configuration.");
+            throw new SQLException("Cannot load local database configuration.", exception);
         }
     }
 }

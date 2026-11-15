@@ -65,6 +65,7 @@ public class IncidentsView extends VBox {
     }
 
     private void saveIncident() {
+        status.setText("");
         try {
             if (event.getValue() == null) { throw new IllegalArgumentException("Select an event first."); }
             int id = new IncidentDAO().create(new Incident(0, event.getValue().getId(), type.getText(), description.getText()));

@@ -1,5 +1,6 @@
 package com.eventproof.model;
 
+import com.eventproof.exception.InvalidEventDataException;
 import java.time.LocalDate;
 import java.util.Objects;
 
@@ -34,20 +35,25 @@ public abstract class Event implements ReliabilityAssessable {
     public void setId(int id) { this.id = id; }
     public String getName() { return name; }
     public void setName(String name) {
-        Objects.requireNonNull(name, "name");
-        if (name.isBlank() || name.trim().length() > 150) {
-            throw new IllegalArgumentException("Event name must contain 1 to 150 characters");
+        if (name == null || name.isBlank()) {
+            throw new InvalidEventDataException("Event name cannot be empty.");
+        }
+        if (name.trim().length() > 150) {
+            throw new InvalidEventDataException("Event name must contain 1 to 150 characters");
         }
         this.name = name.trim();
     }
     public LocalDate getEventDate() { return eventDate; }
     public void setEventDate(LocalDate eventDate) {
-        this.eventDate = Objects.requireNonNull(eventDate, "eventDate");
+        if (eventDate == null) {
+            throw new InvalidEventDataException("Event date cannot be empty.");
+        }
+        this.eventDate = eventDate;
     }
     public int getExpectedAttendance() { return expectedAttendance; }
     public void setExpectedAttendance(int expectedAttendance) {
         if (expectedAttendance < 0) {
-            throw new IllegalArgumentException("Expected attendance cannot be negative");
+            throw new InvalidEventDataException("Expected attendance cannot be negative.");
         }
         this.expectedAttendance = expectedAttendance;
     }

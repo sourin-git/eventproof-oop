@@ -151,10 +151,18 @@ public class ReliabilityView extends VBox {
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Text files (*.txt)", "*.txt"));
         try {
             File file = chooser.showSaveDialog(getScene().getWindow());
-            if (file == null) { return; } // Cancellation needs no message.
-            Path output = file.toPath();
-            if (!file.getName().toLowerCase(Locale.ROOT).endsWith(".txt")) {
-                output = Path.of(file.getPath() + ".txt");
+            saveReport(file == null ? null : file.toPath());
+        } catch (SecurityException exception) {
+            showExportError();
+        }
+    }
+
+    /** A cancelled chooser supplies null; saving and its error handling stay together. */
+    private void saveReport(Path output) {
+        if (output == null || reportEvent == null) { return; }
+        try {
+            if (!output.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".txt")) {
+                output = Path.of(output.toString() + ".txt");
             }
             new ReliabilityReportExporter().export(output, reportEvent, reportScore, reportRisk,
                     reportScenario, reportSimulation);
@@ -165,12 +173,16 @@ public class ReliabilityView extends VBox {
             success.setContentText(output.toAbsolutePath().toString());
             success.showAndWait();
         } catch (IOException | SecurityException exception) {
-            Alert error = new Alert(Alert.AlertType.ERROR);
-            error.initOwner(getScene().getWindow());
-            error.setTitle("Export failed");
-            error.setHeaderText("Could not save the report");
-            error.setContentText("Choose a writable folder and try again. The destination may be unavailable or read-only.");
-            error.showAndWait();
+            showExportError();
         }
+    }
+
+    private void showExportError() {
+        Alert error = new Alert(Alert.AlertType.ERROR);
+        error.initOwner(getScene().getWindow());
+        error.setTitle("Export failed");
+        error.setHeaderText("Could not save the report");
+        error.setContentText("Choose a writable folder and try again. The destination may be unavailable or read-only.");
+        error.showAndWait();
     }
 }

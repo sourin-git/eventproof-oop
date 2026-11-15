@@ -82,6 +82,7 @@ public class EventsView extends VBox {
     }
 
     private void saveEvent() {
+        status.setText("");
         try {
             if (venue.getValue() == null || type.getValue() == null || date.getValue() == null) {
                 throw new IllegalArgumentException("Select a venue, event type and date.");
@@ -111,6 +112,7 @@ public class EventsView extends VBox {
     }
 
     private void createVenue() {
+        status.setText("");
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("New venue");
         dialog.initOwner(getScene().getWindow());

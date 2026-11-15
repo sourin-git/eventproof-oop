@@ -1,10 +1,11 @@
-# Review 2 - Steps 1 and 2
+# Review 2 - Steps 1, 2 and 3
 
 Step 1 organizes the existing classes and introduces an interface for the
 existing event-specific penalty method. Step 2 adds a text report exporter using
 the Java Standard Library and one Export Report button on the existing screen.
 The database schema, reliability rules and launch commands are unchanged.
-Review 2 is not yet fully complete; Step 3 has not been implemented.
+Step 3 demonstrates exception handling using the same validation, JDBC and export
+workflows. Review 2 has not had its final audit and is not yet declared complete.
 
 ## Package structure
 
@@ -12,13 +13,14 @@ All production sources are under `src/main/java/com/eventproof`.
 
 | Package | Purpose and contents |
 | --- | --- |
-| com.eventproof | Entry points: EventProofApp, DatabaseSetup, PolymorphismDemo |
+| com.eventproof | Entry points: EventProofApp, DatabaseSetup, PolymorphismDemo, ExceptionHandlingDemo |
 | com.eventproof.model | Domain objects: Event, TechnicalEvent, CulturalEvent, SportsEvent, Venue, Incident; ReliabilityAssessable contract |
 | com.eventproof.dao | JDBC operations: EventDAO, VenueDAO, IncidentDAO |
 | com.eventproof.config | Local database configuration and connections: DatabaseConfig, DatabaseConnection |
 | com.eventproof.reliability | Scoring and simulation: ReliabilityCalculator, FailureScenario, RiskLevel, SimulationResult |
 | com.eventproof.ui | Existing JavaFX views and helpers: EventsView, IncidentsView, ReliabilityView, UiMessages |
 | com.eventproof.report | ReliabilityReportExporter formats and saves already-calculated results as UTF-8 text |
+| com.eventproof.exception | InvalidEventDataException describes invalid Event values |
 
 For example, EventDAO imports model classes and DatabaseConnection from config;
 ReliabilityView imports the DAOs, domain objects and reliability classes.
@@ -182,3 +184,141 @@ The exporter tests use JUnit Jupiter's `@TempDir` and ordinary in-memory model
 objects; they do not connect to MySQL. They cover file creation, Unicode/UTF-8,
 all event types, event/venue details, actual scores and recommendations,
 timestamps, no-simulation reports, and propagated I/O errors.
+
+## EXCEPTION HANDLING
+
+### Unchecked custom exception
+
+`InvalidEventDataException` extends `IllegalArgumentException`, so it is unchecked:
+Java does not require callers to catch it or declare it with `throws`.
+
+```java
+public class InvalidEventDataException extends IllegalArgumentException {
+    public InvalidEventDataException(String message) {
+        super(message);
+    }
+}
+```
+
+Event uses `throw` for its existing invalid values: missing/blank names, names
+longer than 150 characters, missing dates and negative attendance. For example,
+its setters contain these checks:
+
+```java
+if (name == null || name.isBlank()) {
+    throw new InvalidEventDataException("Event name cannot be empty.");
+}
+```
+
+```java
+if (expectedAttendance < 0) {
+    throw new InvalidEventDataException("Expected attendance cannot be negative.");
+}
+```
+
+The accepted values have not changed. Zero attendance, past event dates and
+attendance exceeding venue capacity remain allowed; overcapacity is assessed by
+the existing reliability rules. Setters validate before updating fields.
+Venue capacity and Incident validation retain their existing IllegalArgumentException.
+The UI does not repeat the model's name/attendance validation.
+
+### try-catch and readable input messages
+
+EventsView already catches the superclass, so the custom exception reaches the
+same readable warning dialog. Other form parsing errors keep their specific
+handlers. The actual handler includes:
+
+```java
+} catch (NumberFormatException exception) {
+    UiMessages.inputError("Attendance must be a whole number from 0 to 2147483647.");
+} catch (java.time.format.DateTimeParseException exception) {
+    UiMessages.inputError("Enter a valid date or use the calendar.");
+} catch (IllegalArgumentException exception) {
+    UiMessages.inputError(exception.getMessage());
+} catch (SQLException exception) { UiMessages.databaseError(exception); }
+```
+
+Save attempts clear the previous status message before validating, so an earlier
+successful save is not displayed as the outcome of a failed attempt. Exceptions
+do not produce user-facing stack traces.
+
+### Checked exceptions: IOException and SQLException
+
+Checked exceptions must be handled or declared. `throw` raises an exception;
+`throws` on a method declares that the caller may receive it.
+
+ReliabilityReportExporter declares `throws IOException`. It lets
+`Files.writeString()` errors propagate instead of claiming a successful export.
+ReliabilityView's save helper handles the checked file error:
+
+```java
+} catch (IOException | SecurityException exception) {
+    showExportError();
+}
+```
+
+The success message appears only after writing succeeds. A cancelled FileChooser
+passes null to the helper, which returns immediately without a success or error
+dialog. This isolates cancellation and file-error handling in the existing view,
+without a new reporting abstraction.
+
+DAO methods declare `throws SQLException`. For example, EventDAO has:
+
+```java
+public List<Event> listAll() throws SQLException {
+```
+
+JavaFX screens catch SQLException and use UiMessages.databaseError(). The dialog
+contains setup advice, SQL state and vendor error code, rather than raw exception
+messages, URLs, credentials or stack traces. Actual JDBC failures propagate;
+no custom SQLException wrapper is added. A configuration-file failure keeps its
+original IOException as the cause for debugging:
+
+```java
+} catch (IOException exception) {
+    // Do not include configuration contents or credentials in error messages.
+    throw new SQLException("Cannot load local database configuration.", exception);
+}
+```
+
+### finally: console demonstration
+
+ExceptionHandlingDemo has a try-catch-finally example independent of JavaFX and
+MySQL. It tries a blank name and a valid name. Its actual method is:
+
+```java
+private static void demonstrate(String name, Venue venue) {
+    try {
+        Event event = new TechnicalEvent(1, name, LocalDate.of(2026, 11, 30), 400, venue);
+        System.out.println("Valid event: " + event.getName());
+    } catch (InvalidEventDataException exception) {
+        System.out.println("Invalid event data: " + exception.getMessage());
+    } finally {
+        System.out.println("Validation attempt finished.");
+    }
+}
+```
+
+The finally block runs after both attempts, regardless of whether validation
+throws. It illustrates normal try/catch completion; the console message does not
+replace resource management. Run after compilation:
+
+```powershell
+java -cp target/classes com.eventproof.ExceptionHandlingDemo
+```
+
+### try-with-resources
+
+DAOs still use try-with-resources, which automatically closes JDBC resources
+even if the operation throws. For example, VenueDAO.listAll() opens:
+
+```java
+try (Connection connection = DatabaseConnection.getConnection();
+     PreparedStatement statement = connection.prepareStatement("SELECT * FROM venues ORDER BY id");
+     ResultSet result = statement.executeQuery()) {
+```
+
+Resources close in reverse order: ResultSet, PreparedStatement, then Connection.
+There is no manual connection-closing finally block. Existing exporter I/O-error
+tests and read-only JDBC tests continue to verify checked-exception workflows;
+the new tests focus on the custom Event exception and unchanged valid inputs.
