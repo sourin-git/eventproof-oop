@@ -8,13 +8,19 @@ import com.eventproof.reliability.FailureScenario;
 import com.eventproof.reliability.ReliabilityCalculator;
 import com.eventproof.reliability.RiskLevel;
 import com.eventproof.reliability.SimulationResult;
+import com.eventproof.report.ReliabilityReportExporter;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Locale;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
 
 public class ReliabilityView extends VBox {
     private final ComboBox<Event> event = new ComboBox<>();
@@ -25,6 +31,12 @@ public class ReliabilityView extends VBox {
     private final Label risk = new Label("Risk Level: —");
     private final Label recommendation = new Label("Select an event and calculate reliability.");
     private final ReliabilityCalculator calculator = new ReliabilityCalculator();
+    private final Button export = new Button("Export Report");
+    private Event reportEvent;
+    private int reportScore;
+    private RiskLevel reportRisk;
+    private FailureScenario reportScenario;
+    private SimulationResult reportSimulation;
 
     public ReliabilityView() {
         setPadding(new Insets(24));
@@ -40,6 +52,8 @@ public class ReliabilityView extends VBox {
         scenario.getSelectionModel().select(FailureScenario.NORMAL);
         event.valueProperty().addListener((observable, oldValue, newValue) -> reset());
         scenario.valueProperty().addListener((observable, oldValue, newValue) -> {
+            reportScenario = null;
+            reportSimulation = null;
             simulated.setText("Simulated Score: —");
             risk.setText("Risk Level: —");
             recommendation.setText("Run the selected scenario to refresh the comparison.");
@@ -47,6 +61,9 @@ public class ReliabilityView extends VBox {
         Button calculate = new Button("Calculate reliability");
         calculate.setId("calculate-reliability");
         calculate.setOnAction(action -> calculate(false));
+        export.setId("export-report");
+        export.setDisable(true);
+        export.setOnAction(action -> exportReport());
         Button simulate = new Button("Simulate failure");
         simulate.setId("simulate-failure");
         simulate.setOnAction(action -> calculate(true));
@@ -63,7 +80,7 @@ public class ReliabilityView extends VBox {
                 + "\nFailures assume the corresponding backup is unavailable; overcrowding assumes at least 120% of capacity."
                 + " Each failure adds one hypothetical incident.");
         note.setWrapText(true);
-        getChildren().addAll(new HBox(12, new Label("Event"), event), details, calculate, new Separator(),
+        getChildren().addAll(new HBox(12, new Label("Event"), event), details, new HBox(12, calculate, export), new Separator(),
                 new HBox(12, new Label("Scenario"), scenario, simulate), scores, rules, note);
     }
 
@@ -75,6 +92,7 @@ public class ReliabilityView extends VBox {
     }
 
     private void reset() {
+        invalidateReport();
         Event selected = event.getValue();
         details.setText(selected == null ? "No event selected." : selected.getEventType() + " | "
                 + selected.getVenue().getName() + " | Attendance: " + selected.getExpectedAttendance()
@@ -86,6 +104,7 @@ public class ReliabilityView extends VBox {
     }
 
     private void calculate(boolean simulate) {
+        invalidateReport();
         if (event.getValue() == null) { UiMessages.inputError("Select an event first."); return; }
         try {
             // Read fresh records so newly saved incidents affect the next calculation.
@@ -93,9 +112,10 @@ public class ReliabilityView extends VBox {
                     .orElseThrow(() -> new IllegalArgumentException("This event no longer exists. Refresh the events list."));
             List<Incident> incidents = new IncidentDAO().listByEventId(selected.getId());
             int score = calculator.calculate(selected, incidents);
+            SimulationResult result = null;
             original.setText("Original Score: " + score + " / 100");
             if (simulate) {
-                SimulationResult result = calculator.simulate(selected, incidents, scenario.getValue());
+                result = calculator.simulate(selected, incidents, scenario.getValue());
                 simulated.setText("Simulated Score: " + result.getSimulatedScore() + " / 100");
                 risk.setText("Risk Level: " + result.getRiskLevel() + " (simulated)");
                 recommendation.setText(result.getRecommendation());
@@ -105,7 +125,52 @@ public class ReliabilityView extends VBox {
                 recommendation.setText("Recorded incidents: " + incidents.size()
                         + ". Review incidents, check backups, and keep attendance within capacity.");
             }
+            reportEvent = selected;
+            reportScore = score;
+            reportRisk = calculator.riskLevel(score);
+            reportScenario = simulate ? scenario.getValue() : null;
+            reportSimulation = result;
+            export.setDisable(false);
         } catch (SQLException exception) { UiMessages.databaseError(exception); }
         catch (IllegalArgumentException exception) { UiMessages.inputError(exception.getMessage()); }
+    }
+
+    private void invalidateReport() {
+        reportEvent = null;
+        reportRisk = null;
+        reportScenario = null;
+        reportSimulation = null;
+        export.setDisable(true);
+    }
+
+    private void exportReport() {
+        if (reportEvent == null) { return; }
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Export Reliability Report");
+        chooser.setInitialFileName("EventProof_Reliability_Report.txt");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Text files (*.txt)", "*.txt"));
+        try {
+            File file = chooser.showSaveDialog(getScene().getWindow());
+            if (file == null) { return; } // Cancellation needs no message.
+            Path output = file.toPath();
+            if (!file.getName().toLowerCase(Locale.ROOT).endsWith(".txt")) {
+                output = Path.of(file.getPath() + ".txt");
+            }
+            new ReliabilityReportExporter().export(output, reportEvent, reportScore, reportRisk,
+                    reportScenario, reportSimulation);
+            Alert success = new Alert(Alert.AlertType.INFORMATION);
+            success.initOwner(getScene().getWindow());
+            success.setTitle("Report exported");
+            success.setHeaderText("Reliability report saved");
+            success.setContentText(output.toAbsolutePath().toString());
+            success.showAndWait();
+        } catch (IOException | SecurityException exception) {
+            Alert error = new Alert(Alert.AlertType.ERROR);
+            error.initOwner(getScene().getWindow());
+            error.setTitle("Export failed");
+            error.setHeaderText("Could not save the report");
+            error.setContentText("Choose a writable folder and try again. The destination may be unavailable or read-only.");
+            error.showAndWait();
+        }
     }
 }

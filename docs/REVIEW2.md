@@ -1,9 +1,10 @@
-# Review 2 - Step 1: packages and one interface
+# Review 2 - Steps 1 and 2
 
-This step organizes the existing classes and introduces an interface for the
-existing event-specific penalty method. It keeps the GUI, database schema,
-reliability rules and launch commands unchanged. Later Review 2 steps are not
-implemented here.
+Step 1 organizes the existing classes and introduces an interface for the
+existing event-specific penalty method. Step 2 adds a text report exporter using
+the Java Standard Library and one Export Report button on the existing screen.
+The database schema, reliability rules and launch commands are unchanged.
+Review 2 is not yet fully complete; Step 3 has not been implemented.
 
 ## Package structure
 
@@ -17,6 +18,7 @@ All production sources are under `src/main/java/com/eventproof`.
 | com.eventproof.config | Local database configuration and connections: DatabaseConfig, DatabaseConnection |
 | com.eventproof.reliability | Scoring and simulation: ReliabilityCalculator, FailureScenario, RiskLevel, SimulationResult |
 | com.eventproof.ui | Existing JavaFX views and helpers: EventsView, IncidentsView, ReliabilityView, UiMessages |
+| com.eventproof.report | ReliabilityReportExporter formats and saves already-calculated results as UTF-8 text |
 
 For example, EventDAO imports model classes and DatabaseConnection from config;
 ReliabilityView imports the DAOs, domain objects and reliability classes.
@@ -88,3 +90,95 @@ Run the existing console entry point after compilation:
 ```powershell
 java -cp target/classes com.eventproof.PolymorphismDemo
 ```
+
+## IMPLEMENTATION OF JAVA STANDARD LIBRARY
+
+Step 2 implements **Export Reliability Report (.txt)** without external libraries.
+
+| Java library | Actual use |
+| --- | --- |
+| java.util | The existing screen uses List<Event> and List<Incident>; the exporter builds a List<String> of report lines from the supplied event and results |
+| java.time | LocalDateTime.now() supplies the report generation time; DateTimeFormatter formats it as yyyy-MM-dd HH:mm:ss |
+| java.nio.file | Path identifies the destination; Files.writeString() saves the report |
+| java.nio.charset | StandardCharsets.UTF_8 preserves names and text, including non-English characters |
+
+ReliabilityReportExporter accepts an Event, the already-calculated original score
+and RiskLevel, and an optional FailureScenario/SimulationResult pair. Pass null
+for both optional values when no simulation was performed. The exporter has no
+JavaFX or JDBC dependencies, does not change objects, and does not calculate scores
+or classify risk. ReliabilityView supplies results from ReliabilityCalculator,
+including the existing recommendation from SimulationResult.
+
+### Export Report button
+
+1. Select an event and Calculate reliability (or run a simulation).
+2. Optionally choose a failure scenario and click Simulate failure.
+3. Click Export Report. The JavaFX FileChooser suggests
+   `EventProof_Reliability_Report.txt` and filters for `.txt` files.
+4. Choose a destination. A successful save displays a confirmation.
+
+The button is disabled until a calculation succeeds. Changing the event or
+reloading its selection invalidates the saved result. Changing the scenario
+discards the previous simulation; exporting before running the new scenario
+produces an original-only report. Recalculating without simulation also clears
+the earlier simulation. The export uses the last successful calculation, not a
+fresh database query; calculate again after recording new incidents.
+
+Cancelling the chooser does nothing. IOException propagates from the exporter
+and is handled by the screen with a readable error dialog. It is not silently
+ignored. Export does not insert or update database records.
+
+### Example report (illustrative values only)
+
+This example assumes a TechnicalEvent with both backups, capacity 1000,
+attendance 800, and two recorded incidents. The original score is 80; the
+INTERNET_FAILURE scenario gives 45. Runtime reports use the selected event,
+actual calculation results and the current local generation time.
+
+```text
+========================================
+EVENTPROOF — RELIABILITY REPORT
+========================================
+
+Event Name: Example Technical Fest
+Event Type: TECHNICAL
+Event Date: 2026-11-30
+
+Venue: Example Auditorium
+Venue Capacity: 1000
+Expected Attendance: 800
+
+----------------------------------------
+RELIABILITY ANALYSIS
+----------------------------------------
+
+Original Reliability Score: 80 / 100
+Risk Level: LOW
+
+----------------------------------------
+FAILURE SIMULATION
+----------------------------------------
+
+Scenario: INTERNET_FAILURE
+Simulated Reliability Score: 45 / 100
+Simulated Risk Level: HIGH
+
+Recommendation:
+Arrange an independent internet backup and prepare offline activities.
+
+Rule-based classroom estimate, not a real-world safety prediction.
+----------------------------------------
+
+Report Generated:
+2026-11-16 10:30:00
+
+========================================
+```
+
+Without simulation the report says `No failure simulation selected.` and marks
+the simulated score, simulated risk and recommendation as not applicable.
+
+The exporter tests use JUnit Jupiter's `@TempDir` and ordinary in-memory model
+objects; they do not connect to MySQL. They cover file creation, Unicode/UTF-8,
+all event types, event/venue details, actual scores and recommendations,
+timestamps, no-simulation reports, and propagated I/O errors.
