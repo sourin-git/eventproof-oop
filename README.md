@@ -2,11 +2,13 @@
 
 A small second-year Advanced OOP project for college technical fests, cultural
 programs, and sports meets. The JavaFX desktop application stores events and
-incidents in MySQL, calculates a simple reliability score, and runs what-if scenarios.
+incidents in MySQL, calculates a simple reliability score, runs what-if scenarios,
+and exports reliability reports as UTF-8 text.
 It is a rule-based classroom estimate, **not a real-world safety prediction**.
 
 For the presentation procedure and viva preparation, see [Demo guide](docs/DEMO_GUIDE.md).
-For Review 2 Step 1 packages and the interface, see [Review 2](docs/REVIEW2.md).
+For Review 2 packages, interfaces, Java libraries, exception handling and audit results,
+see [Review 2](docs/REVIEW2.md), including the remaining native FileChooser check.
 
 ## Stack and installation
 
@@ -37,6 +39,7 @@ It does not access the old EventProof repository or database.
 mvn clean test
 mvn javafx:run
 java -cp target/classes com.eventproof.PolymorphismDemo
+java -cp target/classes com.eventproof.ExceptionHandlingDemo
 ```
 
 The first Maven build needs internet access. This workspace uses a local dependency
@@ -73,12 +76,14 @@ Java classes are organized into these packages:
 
 | Package | Classes and interface |
 | --- | --- |
-| com.eventproof | EventProofApp, DatabaseSetup, PolymorphismDemo entry points |
+| com.eventproof | EventProofApp, DatabaseSetup, PolymorphismDemo, ExceptionHandlingDemo entry points |
 | com.eventproof.model | Event, TechnicalEvent, CulturalEvent, SportsEvent, Venue, Incident, ReliabilityAssessable interface |
 | com.eventproof.dao | VenueDAO, EventDAO, IncidentDAO |
 | com.eventproof.config | DatabaseConfig, DatabaseConnection |
 | com.eventproof.reliability | ReliabilityCalculator, FailureScenario, RiskLevel, SimulationResult |
 | com.eventproof.ui | EventsView, IncidentsView, ReliabilityView, UiMessages |
+| com.eventproof.report | ReliabilityReportExporter |
+| com.eventproof.exception | InvalidEventDataException |
 
 Sources are in `src/main/java`; SQL and CSS are in `src/main/resources`;
 tests are in `src/test/java`. DAO operations are intentionally limited:

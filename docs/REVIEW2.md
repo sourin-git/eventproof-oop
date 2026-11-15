@@ -1,38 +1,32 @@
-# Review 2 - Steps 1, 2 and 3
+# Review 2: packages, Java libraries and exception handling
 
-Step 1 organizes the existing classes and introduces an interface for the
-existing event-specific penalty method. Step 2 adds a text report exporter using
-the Java Standard Library and one Export Report button on the existing screen.
-The database schema, reliability rules and launch commands are unchanged.
-Step 3 demonstrates exception handling using the same validation, JDBC and export
-workflows. Review 2 has not had its final audit and is not yet declared complete.
+EventProof is a second-year Advanced OOP desktop project for college events.
+Review 2 organizes the existing application, adds a reusable reliability contract,
+exports calculated reports using built-in Java libraries, and demonstrates exception
+handling. The JavaFX layout, MySQL schema and reliability scoring rules are preserved.
+The final audit passed with the native FileChooser limitation noted below.
 
 ## Package structure
 
-All production sources are under `src/main/java/com/eventproof`.
+Production sources are under `src/main/java/com/eventproof`. Public classes and
+methods allow interaction across packages; domain fields remain private and Event's
+constructor is protected. For example, EventDAO imports model classes and config's
+DatabaseConnection; ReliabilityView imports DAOs, models, reliability and report classes.
 
-| Package | Purpose and contents |
+| Package | Purpose and actual classes |
 | --- | --- |
 | com.eventproof | Entry points: EventProofApp, DatabaseSetup, PolymorphismDemo, ExceptionHandlingDemo |
-| com.eventproof.model | Domain objects: Event, TechnicalEvent, CulturalEvent, SportsEvent, Venue, Incident; ReliabilityAssessable contract |
-| com.eventproof.dao | JDBC operations: EventDAO, VenueDAO, IncidentDAO |
-| com.eventproof.config | Local database configuration and connections: DatabaseConfig, DatabaseConnection |
-| com.eventproof.reliability | Scoring and simulation: ReliabilityCalculator, FailureScenario, RiskLevel, SimulationResult |
-| com.eventproof.ui | Existing JavaFX views and helpers: EventsView, IncidentsView, ReliabilityView, UiMessages |
-| com.eventproof.report | ReliabilityReportExporter formats and saves already-calculated results as UTF-8 text |
-| com.eventproof.exception | InvalidEventDataException describes invalid Event values |
+| com.eventproof.model | Event, TechnicalEvent, CulturalEvent, SportsEvent, Venue, Incident, ReliabilityAssessable |
+| com.eventproof.dao | Simple JDBC operations: EventDAO, VenueDAO, IncidentDAO |
+| com.eventproof.config | DatabaseConfig, DatabaseConnection |
+| com.eventproof.reliability | ReliabilityCalculator, FailureScenario, RiskLevel, SimulationResult |
+| com.eventproof.ui | EventsView, IncidentsView, ReliabilityView, UiMessages |
+| com.eventproof.report | ReliabilityReportExporter |
+| com.eventproof.exception | InvalidEventDataException |
 
-For example, EventDAO imports model classes and DatabaseConnection from config;
-ReliabilityView imports the DAOs, domain objects and reliability classes.
-Classes and operations used by other packages are public. Domain fields remain
-private, and Event's constructor remains protected for its subclasses. Package
-separation does not require making fields public.
+## Interfaces and runtime polymorphism
 
-The original tests remain in `com.eventproof` and import the public classes from
-their new packages, exercising those package boundaries. Entry points remain in
-the root package so existing Maven and console commands still work.
-
-## Interface definition and implementation
+The implemented contract preserves the original method signature:
 
 ```java
 package com.eventproof.model;
@@ -42,173 +36,86 @@ public interface ReliabilityAssessable {
 }
 ```
 
-An interface declares an operation that implementing classes must provide.
-Event now declares `implements ReliabilityAssessable` and keeps the method
-abstract. TechnicalEvent, CulturalEvent and SportsEvent inherit that contract
-and supply their existing public overrides. The signature, return type and
-penalties are unchanged.
-
-The calculator now calls the method through the contract:
+Abstract Event implements ReliabilityAssessable and keeps this method abstract.
+TechnicalEvent, CulturalEvent and SportsEvent provide their existing public overrides.
+The calculator uses the interface directly:
 
 ```java
 ReliabilityAssessable assessment = event;
 int penalty = assessment.calculateReliabilityPenalty();
 ```
 
-The remaining scoring rules still use Event's attendance and Venue. The interface
-describes only the shared penalty operation; it does not introduce a second
-scoring API or duplicate the calculation.
-
-## Interface-based polymorphism example
-
-PolymorphismDemo imports classes from model and uses interface references:
-
-```java
-import com.eventproof.model.CulturalEvent;
-import com.eventproof.model.ReliabilityAssessable;
-import com.eventproof.model.SportsEvent;
-import com.eventproof.model.TechnicalEvent;
-import com.eventproof.model.Venue;
-import java.time.LocalDate;
-
-Venue venue = new Venue(1, "College Ground", 200, false, false);
-LocalDate date = LocalDate.of(2026, 11, 15);
-ReliabilityAssessable[] events = {
-    new TechnicalEvent(1, "Tech Fest", date, 250, venue),
-    new CulturalEvent(2, "Cultural Program", date, 250, venue),
-    new SportsEvent(3, "Sports Meet", date, 250, venue)
-};
-for (ReliabilityAssessable event : events) {
-    System.out.println(event.getClass().getSimpleName() + ": "
-            + event.calculateReliabilityPenalty() + " penalty points");
-}
-```
-
-Java selects the concrete subclass's override at runtime. For this same venue,
-the penalties are TechnicalEvent 35, CulturalEvent 20 and SportsEvent 25.
-
-Run the existing console entry point after compilation:
-
-```powershell
-java -cp target/classes com.eventproof.PolymorphismDemo
-```
+Java chooses the actual subclass's method at runtime. PolymorphismDemo imports the
+model classes and iterates over a ReliabilityAssessable array. For its same unprepared,
+over-capacity venue, TechnicalEvent returns 35, CulturalEvent 20 and SportsEvent 25
+penalty points. These penalties are inputs to the existing final-score calculation.
 
 ## IMPLEMENTATION OF JAVA STANDARD LIBRARY
 
-Step 2 implements **Export Reliability Report (.txt)** without external libraries.
-
-| Java library | Actual use |
+| Built-in library | Actual use |
 | --- | --- |
-| java.util | The existing screen uses List<Event> and List<Incident>; the exporter builds a List<String> of report lines from the supplied event and results |
-| java.time | LocalDateTime.now() supplies the report generation time; DateTimeFormatter formats it as yyyy-MM-dd HH:mm:ss |
-| java.nio.file | Path identifies the destination; Files.writeString() saves the report |
-| java.nio.charset | StandardCharsets.UTF_8 preserves names and text, including non-English characters |
+| java.util | DAOs/screens use List<Event> and List<Incident>; the exporter assembles List<String> report lines |
+| java.time | LocalDateTime.now() and DateTimeFormatter generate readable local report timestamps |
+| java.nio.file | Path identifies the destination; Files.writeString() writes the report |
+| java.nio.charset | StandardCharsets.UTF_8 preserves Unicode names and report text |
 
-ReliabilityReportExporter accepts an Event, the already-calculated original score
-and RiskLevel, and an optional FailureScenario/SimulationResult pair. Pass null
-for both optional values when no simulation was performed. The exporter has no
-JavaFX or JDBC dependencies, does not change objects, and does not calculate scores
-or classify risk. ReliabilityView supplies results from ReliabilityCalculator,
-including the existing recommendation from SimulationResult.
+ReliabilityReportExporter accepts an Event, the calculated original score and
+RiskLevel, and an optional FailureScenario/SimulationResult pair. It neither queries
+MySQL nor changes objects nor calculates new rules. Actual formatting/writing includes:
 
-### Export Report button
+```java
+String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+```
 
-1. Select an event and Calculate reliability (or run a simulation).
-2. Optionally choose a failure scenario and click Simulate failure.
-3. Click Export Report. The JavaFX FileChooser suggests
-   `EventProof_Reliability_Report.txt` and filters for `.txt` files.
-4. Choose a destination. A successful save displays a confirmation.
+```java
+Files.writeString(output, String.join(System.lineSeparator(), lines) + System.lineSeparator(),
+        StandardCharsets.UTF_8);
+```
 
-The button is disabled until a calculation succeeds. Changing the event or
-reloading its selection invalidates the saved result. Changing the scenario
-discards the previous simulation; exporting before running the new scenario
-produces an original-only report. Recalculating without simulation also clears
-the earlier simulation. The export uses the last successful calculation, not a
-fresh database query; calculate again after recording new incidents.
+### Report export
 
-Cancelling the chooser does nothing. IOException propagates from the exporter
-and is handled by the screen with a readable error dialog. It is not silently
-ignored. Export does not insert or update database records.
+Select an event, Calculate reliability, optionally Simulate failure, then click
+Export Report. FileChooser suggests `EventProof_Reliability_Report.txt`, filters for
+`.txt`, and lets the user choose a destination. Success is shown only after writing.
+The button remains disabled until calculation succeeds. Changing the event invalidates
+the result; changing the scenario or recalculating clears the earlier simulation.
 
-### Example report (illustrative values only)
+The report uses the last successful calculation: calculate again after adding
+incidents. It contains event/venue details, original score and risk, optional simulation
+score/risk/recommendation, and generation time. Without simulation, pass null for both
+optional values; the report states that no simulation was selected and marks simulated
+values as not applicable. Export never modifies the database.
 
-This example assumes a TechnicalEvent with both backups, capacity 1000,
-attendance 800, and two recorded incidents. The original score is 80; the
-INTERNET_FAILURE scenario gives 45. Runtime reports use the selected event,
-actual calculation results and the current local generation time.
+**Illustrative report excerpt:** with a technical event, both backups available,
+capacity 1000, attendance 800 and two incidents, the existing rules yield:
 
 ```text
-========================================
 EVENTPROOF — RELIABILITY REPORT
-========================================
-
 Event Name: Example Technical Fest
 Event Type: TECHNICAL
-Event Date: 2026-11-30
-
-Venue: Example Auditorium
 Venue Capacity: 1000
 Expected Attendance: 800
-
-----------------------------------------
-RELIABILITY ANALYSIS
-----------------------------------------
-
 Original Reliability Score: 80 / 100
 Risk Level: LOW
-
-----------------------------------------
-FAILURE SIMULATION
-----------------------------------------
-
 Scenario: INTERNET_FAILURE
 Simulated Reliability Score: 45 / 100
 Simulated Risk Level: HIGH
-
 Recommendation:
 Arrange an independent internet backup and prepare offline activities.
-
-Rule-based classroom estimate, not a real-world safety prediction.
-----------------------------------------
-
 Report Generated:
 2026-11-16 10:30:00
-
-========================================
 ```
 
-Without simulation the report says `No failure simulation selected.` and marks
-the simulated score, simulated risk and recommendation as not applicable.
-
-The exporter tests use JUnit Jupiter's `@TempDir` and ordinary in-memory model
-objects; they do not connect to MySQL. They cover file creation, Unicode/UTF-8,
-all event types, event/venue details, actual scores and recommendations,
-timestamps, no-simulation reports, and propagated I/O errors.
+These are sample values. Runtime reports use selected records, actual calculation
+results and the current time. They are classroom estimates, not safety predictions.
 
 ## EXCEPTION HANDLING
 
-### Unchecked custom exception
+### Unchecked exception, throw and try-catch
 
-`InvalidEventDataException` extends `IllegalArgumentException`, so it is unchecked:
-Java does not require callers to catch it or declare it with `throws`.
-
-```java
-public class InvalidEventDataException extends IllegalArgumentException {
-    public InvalidEventDataException(String message) {
-        super(message);
-    }
-}
-```
-
-Event uses `throw` for its existing invalid values: missing/blank names, names
-longer than 150 characters, missing dates and negative attendance. For example,
-its setters contain these checks:
-
-```java
-if (name == null || name.isBlank()) {
-    throw new InvalidEventDataException("Event name cannot be empty.");
-}
-```
+InvalidEventDataException extends IllegalArgumentException. It is unchecked, so
+callers are not required to declare or catch it. Event uses it for existing rules:
+missing/blank or overlong names, missing dates and negative attendance. For example:
 
 ```java
 if (expectedAttendance < 0) {
@@ -216,40 +123,25 @@ if (expectedAttendance < 0) {
 }
 ```
 
-The accepted values have not changed. Zero attendance, past event dates and
-attendance exceeding venue capacity remain allowed; overcapacity is assessed by
-the existing reliability rules. Setters validate before updating fields.
-Venue capacity and Incident validation retain their existing IllegalArgumentException.
-The UI does not repeat the model's name/attendance validation.
-
-### try-catch and readable input messages
-
-EventsView already catches the superclass, so the custom exception reaches the
-same readable warning dialog. Other form parsing errors keep their specific
-handlers. The actual handler includes:
+`throw` raises the exception. Validation runs before field assignment; accepted
+values are unchanged, including past dates, zero attendance and overcapacity.
+Venue and Incident keep their existing IllegalArgumentException validation.
+EventsView's existing superclass catch also handles the custom exception:
 
 ```java
-} catch (NumberFormatException exception) {
-    UiMessages.inputError("Attendance must be a whole number from 0 to 2147483647.");
-} catch (java.time.format.DateTimeParseException exception) {
-    UiMessages.inputError("Enter a valid date or use the calendar.");
 } catch (IllegalArgumentException exception) {
     UiMessages.inputError(exception.getMessage());
 } catch (SQLException exception) { UiMessages.databaseError(exception); }
 ```
 
-Save attempts clear the previous status message before validating, so an earlier
-successful save is not displayed as the outcome of a failed attempt. Exceptions
-do not produce user-facing stack traces.
+Number/date parsing has specific catch blocks. Failed save attempts clear any earlier
+success message. Dialogs show readable messages without stack traces.
 
-### Checked exceptions: IOException and SQLException
+### Checked exceptions and throws
 
-Checked exceptions must be handled or declared. `throw` raises an exception;
-`throws` on a method declares that the caller may receive it.
-
-ReliabilityReportExporter declares `throws IOException`. It lets
-`Files.writeString()` errors propagate instead of claiming a successful export.
-ReliabilityView's save helper handles the checked file error:
+IOException and SQLException are checked: methods must catch them or declare them
+using `throws`. ReliabilityReportExporter.export() declares `throws IOException` and
+lets file errors propagate. ReliabilityView's save helper catches them:
 
 ```java
 } catch (IOException | SecurityException exception) {
@@ -257,60 +149,38 @@ ReliabilityView's save helper handles the checked file error:
 }
 ```
 
-The success message appears only after writing succeeds. A cancelled FileChooser
-passes null to the helper, which returns immediately without a success or error
-dialog. This isolates cancellation and file-error handling in the existing view,
-without a new reporting abstraction.
+A cancelled chooser supplies null, and the helper returns without any dialog.
+On write failure, it shows an error instead of a success message; the user can retry.
 
-DAO methods declare `throws SQLException`. For example, EventDAO has:
+DAO methods and DatabaseConnection.getConnection() declare `throws SQLException`.
+Screens catch it and display setup advice, SQL state and vendor code. Raw driver
+messages, database credentials and stack traces are not displayed. A configuration
+read failure retains its cause for debugging using standard SQLException:
 
 ```java
-public List<Event> listAll() throws SQLException {
+throw new SQLException("Cannot load local database configuration.", exception);
 ```
 
-JavaFX screens catch SQLException and use UiMessages.databaseError(). The dialog
-contains setup advice, SQL state and vendor error code, rather than raw exception
-messages, URLs, credentials or stack traces. Actual JDBC failures propagate;
-no custom SQLException wrapper is added. A configuration-file failure keeps its
-original IOException as the cause for debugging:
+### finally
+
+ExceptionHandlingDemo is independent of JavaFX/MySQL. Its actual validation block is:
 
 ```java
-} catch (IOException exception) {
-    // Do not include configuration contents or credentials in error messages.
-    throw new SQLException("Cannot load local database configuration.", exception);
+try {
+    Event event = new TechnicalEvent(1, name, LocalDate.of(2026, 11, 30), 400, venue);
+    System.out.println("Valid event: " + event.getName());
+} catch (InvalidEventDataException exception) {
+    System.out.println("Invalid event data: " + exception.getMessage());
+} finally {
+    System.out.println("Validation attempt finished.");
 }
 ```
 
-### finally: console demonstration
-
-ExceptionHandlingDemo has a try-catch-finally example independent of JavaFX and
-MySQL. It tries a blank name and a valid name. Its actual method is:
-
-```java
-private static void demonstrate(String name, Venue venue) {
-    try {
-        Event event = new TechnicalEvent(1, name, LocalDate.of(2026, 11, 30), 400, venue);
-        System.out.println("Valid event: " + event.getName());
-    } catch (InvalidEventDataException exception) {
-        System.out.println("Invalid event data: " + exception.getMessage());
-    } finally {
-        System.out.println("Validation attempt finished.");
-    }
-}
-```
-
-The finally block runs after both attempts, regardless of whether validation
-throws. It illustrates normal try/catch completion; the console message does not
-replace resource management. Run after compilation:
-
-```powershell
-java -cp target/classes com.eventproof.ExceptionHandlingDemo
-```
+The demo tries a blank and a valid name; finally runs after both attempts.
 
 ### try-with-resources
 
-DAOs still use try-with-resources, which automatically closes JDBC resources
-even if the operation throws. For example, VenueDAO.listAll() opens:
+JDBC resources are still managed automatically. VenueDAO.listAll(), for example, uses:
 
 ```java
 try (Connection connection = DatabaseConnection.getConnection();
@@ -318,7 +188,55 @@ try (Connection connection = DatabaseConnection.getConnection();
      ResultSet result = statement.executeQuery()) {
 ```
 
-Resources close in reverse order: ResultSet, PreparedStatement, then Connection.
-There is no manual connection-closing finally block. Existing exporter I/O-error
-tests and read-only JDBC tests continue to verify checked-exception workflows;
-the new tests focus on the custom Event exception and unchanged valid inputs.
+Resources close in reverse order, including when an operation throws. No manual
+connection-closing finally blocks or exception framework were introduced.
+
+## Testing and demonstration
+
+From the project root with MySQL running and the ignored local configuration present:
+
+```powershell
+mvn "-Dmaven.repo.local=.maven-repository" clean test
+mvn "-Dmaven.repo.local=.maven-repository" javafx:run
+java -cp target/classes com.eventproof.PolymorphismDemo
+java -cp target/classes com.eventproof.ExceptionHandlingDemo
+```
+
+The final clean build passed **30 tests, 0 failures, 0 skips**: domain 4, interface 2,
+calculator/simulation 6, exporter 11, custom-exception 5 and live read-only JDBC 2.
+Exporter tests use `@TempDir` and in-memory objects, without database connections.
+
+For a short demonstration:
+
+1. Show stored MySQL events. Create a uniquely named venue and event to demonstrate
+   the existing Save/Refresh actions; keep sample records intact.
+2. On RELIABILITY, calculate and compare INTERNET_FAILURE, POWER_FAILURE and
+   OVERCROWDING. Point to the interface invocation in the calculator.
+3. Export a report and compare its contents with the displayed results. Change the
+   event to show that export is disabled until recalculation.
+4. Add an incident to your demonstration event, close/reopen and show persistence.
+5. Try blank names, negative attendance or empty incident descriptions; explain the
+   warning and continued usability. Run the console demo to show finally.
+
+### Final audit results and remaining manual check
+
+The normal Maven launch and application-level JavaFX checks passed: real event
+loading, venue/event/incident creation, persistence in a second process, all three
+simulations, UTF-8 reports, result invalidation, form warnings, file-error/retry and
+cancellation handling. An isolated temporary configuration verified unavailable-MySQL
+errors without stopping or reconfiguring the real server.
+
+Read-only metadata confirmed MySQL 8.0.46 and exactly venues, events and incidents,
+each with primary key id. Foreign keys are events.venue_id -> venues.id and
+incidents.event_id -> events.id. JDBC reconstructed all three event subclasses.
+Only uniquely identified audit records were removed after persistence checks;
+existing records remained at **2 venues, 3 events and 4 incidents**.
+
+**Native FileChooser limitation:** the computer-use helper could not connect to its
+native pipe, including after retry/reset. Actual native save/cancel interaction was
+not automated or manually verified. Programmatic save, cancellation-result, failure
+and retry checks passed. Before presenting, manually open Export Report, save a `.txt`
+file, then reopen and Cancel; confirm the saved content and absence of a cancel error.
+
+No blocking application defect was found. The audit changed documentation only;
+the verified checkpoint is preserved by the annotated `review-2` tag.
