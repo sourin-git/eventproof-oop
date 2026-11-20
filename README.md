@@ -357,7 +357,6 @@ java -cp target/classes com.eventproof.ExceptionHandlingDemo
 See [Review 2 documentation](docs/REVIEW2.md) for package, library and exception examples.
 
 ## Team members
-
 - Panshul Agarwal
 - Sourin Nandy
 - Deepjyoti Pal
